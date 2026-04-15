@@ -1,8 +1,11 @@
 package ferrissushi.ingredient.entity;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,26 +27,31 @@ public class Ingredient {
     private CategoryEnum category;
     private List<StockMovement> stockMovementList;
 
-    public StockValue getStockValueAt(Instant t) {
-        List<StockMovement> sortedStockMovement = this.stockMovementList.stream()
-                .sorted(Comparator.comparing(StockMovement::getCreationDatetime))
-                .toList();
-        StockValue remainingStockValue = StockValue.builder()
-                .unit(sortedStockMovement.get(0).getValue().getUnit())
-                .build();
-        Double remainingQuantity = 0.00;
-
-        for (StockMovement sortedStockMovementElement : sortedStockMovement) {
-            if (sortedStockMovementElement.getCreationDatetime().isBefore(t)
-                    || sortedStockMovementElement.getCreationDatetime().equals(t)) {
-                if (sortedStockMovementElement.getType() == StockMovement.MovementTypeEnum.IN) {
-                    remainingQuantity += sortedStockMovementElement.getValue().getQuantity();
-                } else if (sortedStockMovementElement.getType() == StockMovement.MovementTypeEnum.OUT) {
-                    remainingQuantity -= sortedStockMovementElement.getValue().getQuantity();
-                }
-            }
+    public StockValue getStockValueAt(Instant t, DishIngredient.UnitType unit) {
+        if (stockMovementList == null) return null;
+        Map<DishIngredient.UnitType, List<StockMovement>> unitSet = stockMovementList.stream()
+                .collect(Collectors.groupingBy(stockMovement -> stockMovement.getValue().getUnit()));
+        if (unitSet.keySet().size() > 1) {
+            throw new RuntimeException("Multiple unit found and not handle for conversion");
         }
-        remainingStockValue.setQuantity(remainingQuantity);
-        return remainingStockValue;
+
+        List<StockMovement> stockMovements = stockMovementList.stream()
+                .filter(stockMovement -> !stockMovement.getCreationDatetime().isAfter(t))
+                .toList();
+        double movementIn = stockMovements.stream()
+                .filter(stockMovement -> stockMovement.getType().equals(StockMovement.MovementTypeEnum.IN))
+                .flatMapToDouble(stockMovement -> DoubleStream.of(stockMovement.getValue().getQuantity()))
+                .sum();
+        double movementOut = stockMovements.stream()
+                .filter(stockMovement -> stockMovement.getType().equals(StockMovement.MovementTypeEnum.OUT))
+                .flatMapToDouble(stockMovement -> DoubleStream.of(stockMovement.getValue().getQuantity()))
+                .sum();
+
+        StockValue stockValue = new StockValue();
+        stockValue.setQuantity(movementIn - movementOut);
+        stockValue.setUnit(unitSet.keySet().stream().findFirst().get());
+
+        return stockValue;
     }
+
 }

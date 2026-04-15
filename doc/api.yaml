@@ -1,0 +1,309 @@
+openapi: 3.0.0
+info:
+  title: Ingredient API.
+  description: Specification to manage ingredients.
+  version: 1.0.0
+  contact:
+    name: Nicky Harinaina
+    email: nickyharini1na@gmail.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: "http://localhost:8080"
+    description: Local server
+paths:
+  /ingredients:
+    get:
+      tags:
+        - Ingredient
+      summary: Get all ingredients
+      description: Returns list of ingredients
+      responses:
+        200:
+          description: List of ingredients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ingredient"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                InternalServerError:
+                  value:
+                    message: Internal server error
+
+  /ingredients/{id}:
+    get:
+      tags:
+        - Ingredient
+      summary: Get an ingredient by ID
+      description: Returns an ingredient based on its id
+      parameters:
+        - $ref: "#/components/parameters/IngredientId"
+      responses:
+        200:
+          description: Ingredient found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ingredient"
+        404:
+          description: Ingredient not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                NotFound:
+                  value:
+                    message: Ingredient.id=1 is not found
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                InternalServerError:
+                  value:
+                    message: Internal server error
+  /ingredients/{id}/stock:
+    get:
+
+      description: New endpoint
+      responses:
+        200:
+          description: New response
+          content:
+            application/json:
+              schema:
+                :
+    get:
+      tags:
+        - Ingredient
+      summary: Get stock value of an ingredient at a specific time
+      description: Returns the stock value for the ingredient with the provided identifier at the specified time and unit
+      parameters:
+        - $ref: "#/components/parameters/IngredientId"
+        - $ref: "#/components/parameters/At"
+        - $ref: "#/components/parameters/Unit"
+      responses:
+        200:
+          description: Stock value retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockValue"
+        400:
+          description: Missing mandatory query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                MissingQueryParameter:
+                  value:
+                    message: Either mandatory query parameter `at` or `unit` is not provided.
+        404:
+          description: Ingredient not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                NotFound:
+                  value:
+                    message: Ingredient.id=1 is not found
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                InternalServerError:
+                  value:
+                    message: Internal server error
+
+  /dishes:
+    get:
+      tags:
+        - Dish
+      summary: Get all dishes
+      description: Returns list of dishes
+      responses:
+        200:
+          description: List of dishes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dish"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                InternalServerError:
+                  value:
+                    message: Internal server error
+
+  /dishes/{id}/ingredients:
+    put:
+      tags:
+        - Dish
+      summary: Update ingredients associated with a dish
+      description: Allows associating or dissociating a list of ingredients to the dish identified by id
+      parameters:
+        - $ref: "#/components/parameters/DishId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Ingredient"
+      responses:
+        200:
+          description: Updated dish with its ingredients
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dish"
+        400:
+          description: Missing request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                MissingBody:
+                  value:
+                    message: Request body is mandatory
+        404:
+          description: Dish not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                NotFound:
+                  value:
+                    message: Dish.id=1 is not found
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                InternalServerError:
+                  value:
+                    message: Internal server error
+components:
+  parameters:
+    IngredientId:
+      in: path
+      name: id
+      description: Ingredient identifier
+      schema:
+        type: integer
+      required: true
+    DishId:
+      in: path
+      name: id
+      description: Dish identifier
+      schema:
+        type: integer
+      required: true
+    At:
+      in: query
+      name: at
+      description: Timestamp at which to retrieve the stock value
+      schema:
+        type: string
+        format: date-time
+      required: true
+    Unit:
+      in: query
+      name: unit
+      description: Unit of measurement for the stock
+      schema:
+        $ref: "#/components/schemas/UnitType"
+      required: true
+  schemas:
+    CategoryEnum:
+      type: string
+      enum:
+        - VEGETABLE
+        - ANIMAL
+        - MARINE
+        - DAIRY
+        - OTHER
+    UnitType:
+      type: string
+      enum:
+        - KG
+        - PCS
+        - L
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Tomato
+        category:
+          $ref: "#/components/schemas/CategoryEnum"
+        price:
+          type: number
+          format: float
+          example: 2.5
+
+    StockValue:
+      type: object
+      properties:
+        quantity:
+          type: number
+          format: float
+          example: 15.5
+        unit:
+          $ref: "#/components/schemas/UnitType"
+
+    Dish:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Poulet grillé
+        price:
+          type: number
+          format: float
+          example: 12.9
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ingredient"
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message

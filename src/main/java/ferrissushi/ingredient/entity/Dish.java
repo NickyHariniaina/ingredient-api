@@ -18,21 +18,21 @@ public class Dish {
     private Integer id;
     private String name;
     private DishTypeEnum dishType;
-    private Double sellingPrice;
-    private List<DishIngredient> ingredients;
+    private Double price;
+    private List<DishIngredient> dishIngredients;
 
     public Double getPrice() {
-        return sellingPrice;
+        return price;
     }
 
     public Double getDishCost() {
-        return ingredients.stream().mapToDouble(DishIngredient::getTotalPrice).sum();
+        return dishIngredients.stream().mapToDouble(DishIngredient::getTotalPrice).sum();
     }
 
     public Double getGrossMargin() {
-        if (this.sellingPrice == null) {
+        if (this.price == null) {
             throw new RuntimeException("Dish does not have a sellingPrice yet");
         }
-        return this.sellingPrice - getDishCost();
+        return this.price - getDishCost();
     }
 }

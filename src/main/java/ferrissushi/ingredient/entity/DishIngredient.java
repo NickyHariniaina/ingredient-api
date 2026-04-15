@@ -13,7 +13,7 @@ public class DishIngredient {
     private Integer id;
     private Dish dish;
     private Ingredient ingredient;
-    private Double requiredQuantity;
+    private Double quantity;
     private UnitType unit;
 
     public enum UnitType {
@@ -21,6 +21,6 @@ public class DishIngredient {
     }
 
     public Double getTotalPrice() {
-        return requiredQuantity * ingredient.getPrice();
+        return quantity * ingredient.getPrice();
     }
 }
